@@ -65,7 +65,7 @@ test('health reports the mounted plugin and the helper', async () => {
   assert.ok(['ok', 'missing', 'unsupported'].includes(result.body.helper))
 })
 
-test('lookup returns a local system-dictionary definition', async () => {
+test('lookup returns full HTML entries with a native stylesheet', async () => {
   const result = await call(mount(), {
     method: 'POST',
     url: '/plugin/look-up/lookup',
@@ -73,8 +73,23 @@ test('lookup returns a local system-dictionary definition', async () => {
   })
   assert.equal(result.status, 200)
   assert.equal(result.body.ok, true)
-  assert.equal(result.body.word, 'serendipity')
-  assert.match(result.body.definition, /serendipity/u)
+  assert.ok(Array.isArray(result.body.entries) && result.body.entries.length >= 1)
+  const entry = result.body.entries[0]
+  assert.match(entry.html, /serendipity/u)
+  assert.ok(entry.css.length > 1000, 'dictionary stylesheet should be included')
+  assert.equal(typeof entry.dictionary, 'string')
+})
+
+test('lookup includes a Chinese dictionary entry for a Chinese word', async () => {
+  const result = await call(mount(), {
+    method: 'POST',
+    url: '/plugin/look-up/lookup',
+    body: JSON.stringify({ word: '学习' })
+  })
+  assert.equal(result.status, 200)
+  assert.equal(result.body.ok, true)
+  assert.ok(result.body.entries.length >= 1)
+  assert.ok(result.body.entries.some((entry) => /学习/u.test(entry.html)))
 })
 
 test('lookup explains an unknown word instead of failing', async () => {

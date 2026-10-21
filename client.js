@@ -18,7 +18,7 @@ window.__ModuleLoader__.load({
     const LOOKUP_URL = '/plugin/look-up/lookup'
     const OPEN_URL = '/plugin/look-up/open'
     const MAX_WORD_LENGTH = 64
-    const CARD_WIDTH = 380
+    const CARD_WIDTH = 420
 
     /** Runtime copy; the package locale files carry only the plugin metadata. */
     const STRINGS = {
@@ -121,9 +121,9 @@ window.__ModuleLoader__.load({
 }
 .dlu-head {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 13px 12px 9px 16px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px 7px 12px;
 }
 .dlu-titles { min-width: 0; }
 .dlu-word {
@@ -171,6 +171,42 @@ window.__ModuleLoader__.load({
 .dlu-body p { margin: 0 0 9px; }
 .dlu-body p:last-child { margin-bottom: 0; }
 .dlu-body b, .dlu-body strong { font-weight: 640; }
+.dlu-body.is-frame { padding: 0; overflow: hidden; }
+.dlu-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+  padding: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dlu-dict-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, GrayText);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dlu-tabs::-webkit-scrollbar { display: none; }
+.dlu-tab {
+  flex: none;
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, GrayText);
+  font: 550 11px/1 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dlu-tab:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(127,127,127,.14)); color: var(--dsw-alias-label-primary, CanvasText); }
+.dlu-tab.is-active { background: var(--dsw-alias-interactive-bg-active, rgba(127,127,127,.2)); color: var(--dsw-alias-label-primary, CanvasText); }
+.dlu-tab:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, Highlight); outline-offset: 1px; }
+.dlu-frame { display: block; width: 100%; border: 0; background: transparent; }
 .dlu-empty {
   color: var(--dsw-alias-label-secondary, GrayText);
   font-size: 13px;
@@ -346,6 +382,90 @@ window.__ModuleLoader__.load({
       return { phonetic, paragraphs: paragraphs.length > 0 ? paragraphs : [body] }
     }
 
+    /** `cjk`, `latin`, or `other`. */
+    function scriptOf(text) {
+      if (/[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/u.test(text)) return 'cjk'
+      if (/[A-Za-z\u00c0-\u024f]/u.test(text)) return 'latin'
+      return 'other'
+    }
+
+    /** Keep the system default (when its headword matches the query) near the top. */
+    function sortEntries(entries, word) {
+      const queryScript = scriptOf(word)
+      const scored = entries.map((entry, index) => {
+        const titleScript = scriptOf(entry.title || entry.dictionary || '')
+        let score = 0
+        if (titleScript === queryScript) score += 10
+        if (entry.default === true) score += 5
+        if (!/thesaurus|同义|同義/iu.test(entry.dictionary || '')) score += 2
+        if (/Oxford|牛津/iu.test(entry.dictionary || '')) score += 1
+        return { entry, score, index }
+      })
+      scored.sort((a, b) => b.score - a.score || a.index - b.index)
+      return scored.map((item) => item.entry)
+    }
+
+    /** Compact tab label from the dictionary name / short name. */
+    function shortLabel(entry) {
+      const full = String(entry.dictionary || '').trim()
+      const short = String(entry.shortName || '').trim()
+      if (full.length > 0 && full.length <= 18) return full
+      if (short.length > 0) return short.length <= 22 ? short : `${short.slice(0, 20)}…`
+      return full.length <= 26 ? full : `${full.slice(0, 24)}…`
+    }
+
+    /** Resolved theme, using the shell's marker and the page background as fallbacks. */
+    function isDarkTheme() {
+      const root = document.documentElement
+      const body = document.body
+      if (root.hasAttribute('data-ds-dark-theme') || body.hasAttribute('data-ds-dark-theme')) return true
+      if (root.classList.contains('dark') || body.classList.contains('dark')) return true
+      if (root.getAttribute('data-theme') === 'dark' || body.getAttribute('data-theme') === 'dark') return true
+      try {
+        const background = getComputedStyle(body).backgroundColor
+        const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)/u.exec(background)
+        if (match !== null) return (Number(match[1]) + Number(match[2]) + Number(match[3])) / 3 < 128
+      } catch {
+        // fall through to the system preference
+      }
+      try { return window.matchMedia('(prefers-color-scheme: dark)').matches } catch { return false }
+    }
+
+    /** The dictionary's own CSS with a transparent, card-sized frame around it. */
+    function frameDocument(entry, dark) {
+      const theme = dark
+        ? { scheme: 'dark', text: '#eef2f8', secondary: '#9aa6b8', scroll: 'rgba(255,255,255,.18)' }
+        : { scheme: 'light', text: '#101828', secondary: '#475467', scroll: 'rgba(15,23,42,.18)' }
+      const nativeCss = String(entry.css || '')
+      const fallbackCss = nativeCss === ''
+        ? `<style>
+.entry, .semb, .se1, .se2, .gramb, .eg, .ex, .def, .trans, .msDict { display: block; }
+.semb, .se2 { margin: .35em 0 .35em 1em; }
+.hw, .hg, .hwg { font-weight: 650; }
+.ph, .pr, .prx { color: ${theme.secondary}; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.eg, .ex { color: ${theme.secondary}; font-style: italic; }
+</style>`
+        : ''
+      return `<!doctype html><html><head><meta charset="utf-8">${fallbackCss}<style>${nativeCss}</style><style>
+:root { color-scheme: ${theme.scheme}; }
+html, body { margin: 0 !important; padding: 0 !important; background: transparent !important; height: auto !important; min-height: 0 !important; }
+body {
+  padding: 2px 16px 14px !important;
+  color: ${theme.text};
+  font-size: 13.5px;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; pointer-events: none; }
+img, svg, table { max-width: 100% !important; }
+img { height: auto; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: ${theme.scroll}; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+</style></head><body>${String(entry.html || '')}</body></html>`
+    }
+
     /** Re-render whenever the locale dictionary or active locale changes. */
     function useLocaleVersion(locale) {
       const [, setVersion] = useState(0)
@@ -362,6 +482,8 @@ window.__ModuleLoader__.load({
       const [opening, setOpening] = useState(false)
       const cardRef = useRef(null)
       const requestRef = useRef(0)
+      const frameRef = useRef(null)
+      const [frameHeight, setFrameHeight] = useState(0)
 
       useEffect(() => {
         cardRef.current = card
@@ -387,9 +509,37 @@ window.__ModuleLoader__.load({
           status: 'loading',
           result: null,
           code: null,
+          active: 0,
           position: cardPosition(selection.rect)
         })
       }, [])
+
+      // The iframe is cross-document but same-origin, so its real height is
+      // readable without running scripts inside the dictionary HTML.
+      const measureFrame = useCallback(() => {
+        const frame = frameRef.current
+        if (frame === null) return
+        let doc = null
+        try { doc = frame.contentDocument } catch { doc = null }
+        if (doc === null || doc.documentElement === null) return
+        const body = doc.body
+        const last = body !== null ? body.lastElementChild : null
+        const padding = body !== null ? Number.parseFloat(getComputedStyle(body).paddingBottom) || 0 : 0
+        const contentBottom = last !== null ? last.getBoundingClientRect().bottom : 0
+        const measured = Math.max(
+          contentBottom > 0 ? contentBottom + padding + 2 : 0,
+          body !== null ? body.scrollHeight : 0
+        )
+        const height = Math.ceil(measured)
+        if (height <= 0) return
+        const current = cardRef.current
+        const limit = Math.max(160, Math.min((current !== null ? current.position.maxHeight : 360) - 36, 560))
+        setFrameHeight(Math.min(height + 2, limit))
+      }, [])
+
+      useEffect(() => {
+        setFrameHeight(0)
+      }, [card === null ? null : card.requestId, card === null ? null : card.active])
 
       // Ask the Host once per opened card.
       useEffect(() => {
@@ -413,11 +563,19 @@ window.__ModuleLoader__.load({
         })
           .then((response) => response.json())
           .then((data) => {
-            if (data !== null && typeof data === 'object' && data.ok === true) {
-              settle({ status: 'ready', result: data })
-            } else {
-              settle({ status: 'error', code: data !== null && typeof data === 'object' ? data.code ?? 'failed' : 'failed' })
+            if (data !== null && typeof data === 'object' && data.ok === true && Array.isArray(data.entries) && data.entries.length > 0) {
+              settle({
+                status: 'ready',
+                active: 0,
+                result: { ...data, entries: sortEntries(data.entries, data.word ?? card.word) }
+              })
+              return
             }
+            if (data !== null && typeof data === 'object' && data.ok === true && typeof data.definition === 'string') {
+              settle({ status: 'ready', active: 0, result: { ...data, entries: [] } })
+              return
+            }
+            settle({ status: 'error', code: data !== null && typeof data === 'object' ? data.code ?? 'failed' : 'failed' })
           })
           .catch((error) => {
             settle({ status: 'error', code: error !== null && error !== undefined && error.name === 'AbortError' ? 'timeout' : 'failed' })
@@ -540,7 +698,14 @@ window.__ModuleLoader__.load({
       }, [])
 
       const result = card !== null && card.status === 'ready' ? card.result : null
-      const parsed = result !== null ? parseDefinition(result.definition, result.word ?? card.word) : null
+      const entries = result !== null && Array.isArray(result.entries) ? result.entries : []
+      const activeIndex = card !== null && Number.isInteger(card.active)
+        ? Math.min(Math.max(card.active, 0), Math.max(0, entries.length - 1))
+        : 0
+      const activeEntry = entries.length > 0 ? entries[activeIndex] ?? entries[0] : null
+      const fallbackText = result !== null && entries.length === 0 ? String(result.definition ?? result.text ?? '') : ''
+      const parsed = fallbackText !== '' ? parseDefinition(fallbackText, result.word ?? card.word) : null
+      const dark = isDarkTheme()
 
       const errorText = (() => {
         if (card === null || card.status !== 'error') return ''
@@ -586,10 +751,34 @@ window.__ModuleLoader__.load({
               }
             },
             h('div', { className: 'dlu-head' },
-              h('div', { className: 'dlu-titles' },
-                h('div', { className: 'dlu-word' }, result !== null ? result.word ?? card.word : card.word),
-                parsed !== null && parsed.phonetic !== '' ? h('div', { className: 'dlu-phonetic' }, parsed.phonetic) : null
-              ),
+              entries.length > 1
+                ? h('div', { className: 'dlu-tabs', role: 'tablist' },
+                    entries.map((entry, index) => h('button', {
+                      key: `${entry.id || entry.dictionary}-${index}`,
+                      type: 'button',
+                      role: 'tab',
+                      'aria-selected': index === activeIndex,
+                      className: `dlu-tab${index === activeIndex ? ' is-active' : ''}`,
+                      title: entry.dictionary || undefined,
+                      onMouseDown: (event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                      },
+                      onClick: (event) => {
+                        event.stopPropagation()
+                        setCard((current) => current !== null ? { ...current, active: index } : current)
+                      }
+                    }, shortLabel(entry)))
+                  )
+                : entries.length === 1
+                  ? h('span', {
+                      className: 'dlu-dict-label',
+                      title: activeEntry.dictionary || undefined
+                    }, activeEntry.dictionary || t('source'))
+                  : h('div', { className: 'dlu-titles' },
+                      h('div', { className: 'dlu-word' }, card.word),
+                      parsed !== null && parsed.phonetic !== '' ? h('div', { className: 'dlu-phonetic' }, parsed.phonetic) : null
+                    ),
               h('button', {
                 type: 'button',
                 className: 'dlu-close',
@@ -599,7 +788,10 @@ window.__ModuleLoader__.load({
                 onClick: () => setCard(null)
               }, ICON_CLOSE)
             ),
-            h('div', { className: 'dlu-body', style: { maxHeight: `${card.position.maxHeight}px` } },
+            h('div', {
+              className: `dlu-body${entries.length > 0 ? ' is-frame' : ''}`,
+              style: entries.length > 0 ? undefined : { maxHeight: `${card.position.maxHeight}px` }
+            },
               card.status === 'loading'
                 ? h('div', { className: 'dlu-loading' },
                     h('span', null, t('loading')),
@@ -613,12 +805,41 @@ window.__ModuleLoader__.load({
               card.status === 'error'
                 ? h('div', { className: 'dlu-empty is-error' }, errorText)
                 : null,
-              card.status === 'ready' && parsed !== null
+              card.status === 'ready' && activeEntry !== null
+                ? h('iframe', {
+                    ref: frameRef,
+                    className: 'dlu-frame',
+                    title: activeEntry.dictionary || card.word,
+                    sandbox: 'allow-same-origin',
+                    srcDoc: frameDocument(activeEntry, dark),
+                    style: { height: `${frameHeight > 0 ? frameHeight : 220}px` },
+                    onLoad: () => {
+                      // The iframe is a separate document; forward Escape so
+                      // the card can be dismissed while the entry has focus.
+                      try {
+                        const doc = frameRef.current !== null ? frameRef.current.contentDocument : null
+                        if (doc !== null) {
+                          doc.addEventListener('keydown', (event) => {
+                            if (event.key === 'Escape') setCard(null)
+                          })
+                        }
+                      } catch {
+                        // cross-document access is best-effort
+                      }
+                      measureFrame()
+                      window.setTimeout(measureFrame, 160)
+                    }
+                  })
+                : null,
+              card.status === 'ready' && activeEntry === null && parsed !== null
                 ? parsed.paragraphs.map((paragraph, index) => h('p', { key: index }, paragraph))
                 : null
             ),
             h('div', { className: 'dlu-foot' },
-              h('span', { className: 'dlu-source' }, t('source')),
+              h('span', {
+                className: 'dlu-source',
+                title: activeEntry !== null && activeEntry.dictionary !== '' ? activeEntry.dictionary : undefined
+              }, activeEntry !== null && activeEntry.dictionary !== '' ? activeEntry.dictionary : t('source')),
               card.status === 'ready'
                 ? h('button', {
                     type: 'button',

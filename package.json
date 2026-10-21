@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-look-up",
-  "version": "0.1.1",
-  "description": "macOS Look Up inside DSH chat: select a word and read system-dictionary definitions in place, offline.",
+  "version": "0.2.0",
+  "description": "Full macOS Dictionary entries inside DSH chat: select a word and read the complete system-dictionary entry, offline.",
   "type": "module",
   "license": "MIT",
   "author": "huanglianqi",
@@ -41,6 +41,7 @@
     "bin/dsh-lookup-dict",
     "native/dsh-lookup-dict.m",
     "scripts/build-helper.sh",
+    "docs/*.jpg",
     "README.md",
     "LICENSE"
   ],
