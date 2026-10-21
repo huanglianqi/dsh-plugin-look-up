@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-look-up",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "macOS Look Up inside DSH chat: select a word and read system-dictionary definitions in place, offline.",
   "type": "module",
   "license": "MIT",

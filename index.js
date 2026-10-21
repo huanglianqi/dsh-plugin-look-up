@@ -171,7 +171,7 @@ async function lookupWord(word) {
 async function openInDictionary(word) {
   if (process.platform !== 'darwin') return { ok: false, code: 'unsupported' }
   try {
-    await execFileAsync('/usr/bin/open', ['-g', `dict://${encodeURIComponent(word)}`], {
+    await execFileAsync('/usr/bin/open', [`dict://${encodeURIComponent(word)}`], {
       timeout: HELPER_TIMEOUT_MS,
       encoding: 'utf8'
     })

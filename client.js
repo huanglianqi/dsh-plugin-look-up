@@ -30,7 +30,7 @@ window.__ModuleLoader__.load({
         helperMissing: 'The dictionary helper is missing. Reinstall the plugin.',
         timeout: 'The dictionary took too long. Try again.',
         failed: 'Lookup failed. Try again.',
-        copy: 'Copy',
+        copyWord: 'Copy word',
         copied: 'Copied',
         openInDictionary: 'Open in Dictionary',
         source: 'macOS system dictionaries · offline',
@@ -45,7 +45,7 @@ window.__ModuleLoader__.load({
         helperMissing: '词典组件缺失，请重新安装插件。',
         timeout: '查询超时，请重试。',
         failed: '查询失败，请重试。',
-        copy: '复制',
+        copyWord: '复制单词',
         copied: '已复制',
         openInDictionary: '在词典中打开',
         source: 'macOS 系统词典 · 本地查询',
@@ -626,7 +626,7 @@ window.__ModuleLoader__.load({
                     'data-copied': copied ? 'true' : undefined,
                     onMouseDown: (event) => event.stopPropagation(),
                     onClick: () => copyWord(result.word ?? card.word)
-                  }, copied ? t('copied') : t('copy'))
+                  }, copied ? t('copied') : t('copyWord'))
                 : null,
               card.status === 'ready' && navigator.platform !== undefined && /Mac/u.test(navigator.platform)
                 ? h('button', {
