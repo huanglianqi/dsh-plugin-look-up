@@ -1,0 +1,68 @@
+{
+  "name": "dsh-plugin-look-up",
+  "version": "0.1.0",
+  "description": "macOS Look Up inside DSH chat: select a word and read system-dictionary definitions in place, offline.",
+  "type": "module",
+  "license": "MIT",
+  "author": "huanglianqi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huanglianqi/dsh-plugin-look-up.git"
+  },
+  "homepage": "https://github.com/huanglianqi/dsh-plugin-look-up#readme",
+  "bugs": {
+    "url": "https://github.com/huanglianqi/dsh-plugin-look-up/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek-harness-plugin",
+    "dictionary",
+    "look-up",
+    "macos",
+    "define"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "bin/dsh-lookup-dict",
+    "native/dsh-lookup-dict.m",
+    "scripts/build-helper.sh",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:helper": "bash scripts/build-helper.sh",
+    "check": "node --check index.js && node --check client.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

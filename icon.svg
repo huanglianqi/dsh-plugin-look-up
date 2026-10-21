@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Look Up">
+  <defs>
+    <linearGradient id="dlu-bg" x1="8" y1="4" x2="58" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f8df7"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="dlu-page" x1="20" y1="14" x2="44" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity=".98"/>
+      <stop offset="1" stop-color="#dbeafe" stop-opacity=".9"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#dlu-bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="none" stroke="#ffffff" stroke-opacity=".18"/>
+  <path d="M20 15h16.5a7 7 0 0 1 7 7v20.5a7 7 0 0 1-7 7H20z" fill="url(#dlu-page)"/>
+  <path d="M26 23h11M26 29h11M26 35h7" stroke="#1e3a8a" stroke-opacity=".42" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="34.5" cy="37.5" r="9.2" fill="#1e3a8a" fill-opacity=".22" stroke="#ffffff" stroke-width="3.6"/>
+  <path d="M41.2 44.2 49.6 52.6" stroke="#ffffff" stroke-width="4.4" stroke-linecap="round"/>
+</svg>

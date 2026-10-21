@@ -1,0 +1,7 @@
+# dsh-plugin-look-up bundle patch
+#
+# One Loader row. The package is both a Host plugin (the local dictionary route)
+# and a Client bundle (the selection pill and definition card in the Web UI).
+- insert:
+    - id: look-up
+      name: dsh-plugin-look-up
